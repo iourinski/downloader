@@ -1,0 +1,4 @@
+# this is the list of urls to download, lines starting with # are ignored
+http://www.the-village.ru
+ftp://ftp.math.ucla.edu/pub/camreport/cam10-24.pdf
+https://thirdsite
