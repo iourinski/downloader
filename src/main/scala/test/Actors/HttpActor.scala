@@ -27,16 +27,26 @@ class HttpActor extends Actor {
 
     def downloadUrl(downloadRequest: DownloadRequest): String = {
       val fileCreator = new FileCreator(downloadRequest)
-      var res =  ResultMessage("OK", downloadRequest.url, downloadRequest.parentDir)
       val file = fileCreator.makeFile()
+
       try {
         val url = new URL(downloadRequest.url)
-        url #> file !!
+        val connection = url.openConnection()
+        val outputStream = new BufferedOutputStream(new FileOutputStream(file))
+        val inputStream = connection.getInputStream
+        var bytesArray  = new Array[Byte](4096)
+        var bytesRead = 0
+        while (bytesRead  != -1) {
+          outputStream.write(bytesArray, 0, bytesRead)
+          bytesRead = inputStream.read(bytesArray)
+        }
+        outputStream.close()
+        inputStream.close()
       } catch {
-        case e: MalformedURLException =>  "WRONGURL"
-        case e: IOException =>  "FAIL"
-      } finally {
-        return "OK"
+        case e: java.lang.RuntimeException => return "FAIL"
+        case e: MalformedURLException => return  "WRONGURL"
+        case e: IOException =>  return "FAIL"
       }
+      return "OK"
     }
 }

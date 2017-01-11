@@ -36,7 +36,7 @@ object Downloader extends App {
       val file  = new File(inputFilePath)
 
       if (file.exists()){
-        val comment = new Regex("^#")
+        val comment = new Regex("^#|^\\s*$")
         val urls = ListBuffer[String]()
 
         for (line <- Source.fromFile(file).getLines()){

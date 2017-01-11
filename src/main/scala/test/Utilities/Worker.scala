@@ -45,7 +45,7 @@ class Worker(listener: ActorRef, timeout: Int = 5000, timeTracking: Boolean = fa
       //timeTracker ! test.Utilities.Finish
       processed = true
       listener ! ResultMessage(txt, url, parentDir)
-      context.stop(self)
+
     // since actors can not be stopped until they process current message, this only informs us, that something took long time
     case CheckRunTime(period, url) =>
       val ctime = System.currentTimeMillis()

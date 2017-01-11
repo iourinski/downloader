@@ -23,14 +23,14 @@ class FtpActor extends Actor {
       sender() ! ResultMessage("UNKNOWN", "", "")
   }
   def downloadUrl(url: String, parentDir: String): String = {
-    val (server, filepath) = getServerAddress(url)
+    val (server, filepath, login, passw) = getServerAddress(url)
     val ftpClient = new FTPClient()
     val fileCreator = new FileCreator(DownloadRequest(url, parentDir))
 
     try {
 
       ftpClient.connect(server)
-      ftpClient.login("anonymous","")
+      ftpClient.login(login,passw)
       ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
 
       // APPROACH #1: using retrieveFile(String, OutputStream)
@@ -42,7 +42,6 @@ class FtpActor extends Actor {
       var bytesRead = 0
       //println(inputStream.read(bytesArray))
       while (bytesRead  != -1) {
-
         outputStream.write(bytesArray, 0, bytesRead)
         bytesRead = inputStream.read(bytesArray)
       }
@@ -69,14 +68,28 @@ class FtpActor extends Actor {
       }
     }
   }
-
-  private def getServerAddress(url: String):(String, String) = {
+  // lets try to get login, password, server and filepath from address
+  private def getServerAddress(url: String):(String, String, String, String) = {
     val pattern = new Regex("^ftp:\\/\\/[^\\/]+")
-    val server = pattern.findFirstIn(url) match {
+    var server = pattern.findFirstIn(url) match {
       case Some(s) => s
       case None => ""
     }
     val file = url.replace(server,"")
-    return (server.replace("ftp://",""), file)
+    var login, password = ""
+    val bits = server.split("@")
+    if (bits.length == 2) {
+      server = bits(1)
+      val credentials = bits(0).replace("ftp://","").split(":")
+      if (credentials.length == 2) {
+        login = credentials(0)
+        password = credentials(1)
+      } else {
+        login = credentials(0)
+      }
+    } else {
+      login = "anonymous"
+    }
+    return (server.replace("ftp://",""), file, login, password)
   }
 }

@@ -1,4 +1,18 @@
 # this is the list of urls to download, lines starting with # are ignored
+https://lenta.ru/blah
 http://www.the-village.ru
+http://malformed/url/xxx.324
+http://www.the-village.ru/village/business/news/252413-biz-geek
 ftp://ftp.math.ucla.edu/pub/camreport/cam10-24.pdf
+ftp://anonymous@ftp.math.ucla.edu/pub/camreport/cam10-24.pdf
 https://thirdsite
+http://www.the-village.ru/village/people
+http://www.the-village.ru/village/business
+http://www.the-village.ru/village/people/people/252789-moskvichi-i-derevnya
+http://ads.adfox.ru/5024/goLink?hash=49c0736fba95541f&pr=bwkwh&p5=efbab&rand=ddprrye&p1=buxbv&p2=eqhv
+http://ads.adfox.ru/5024/goLink?hash=ae45e4c0da099e6d&pr=bwkwh&p5=edwzh&rand=diaweqw&p1=bctzn&p2=cbf
+http://www.the-village.ru/village/people/comment_people/251883-normalno
+http://www.the-village.ru/village/people/experience/252451-kommunalka-dvorec
+http://www.the-village.ru/village/people/specials/250927-moscow-citizens-say-about-stomatology
+http://www.the-village.ru/village/people/experience/250311-myshechnaya-distrofiya
+http://non-existent.ftp/file
