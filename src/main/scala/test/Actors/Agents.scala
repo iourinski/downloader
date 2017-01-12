@@ -1,30 +1,25 @@
-package test.Utilities
-
-/**
-  * Created by dmitri on 03/01/2017.
-  */
+package test.Actors
 
 import akka.actor.{Props, _}
 import akka.event.Logging
 import akka.routing.RoundRobinRouter
 
-// main actor, that routes and accumulates queries (should probably be refactored into several simpler ones)
-class Master (nrOfWorkers: Int, listener: ActorRef, timeout: Int = 5000, timeTracking: Boolean = false) extends Actor {
+import test.Utilities._
+// definition of actors in the system that are protocol-independent
 
+// main actor, that routes and accumulates queries
+class Master (nrOfWorkers: Int, listener: ActorRef, timeout: Int = 5000, timeTracking: Boolean = false) extends Actor {
   val workerRouter = context.actorOf(
     Props(new Worker(listener, timeout, timeTracking)).withRouter(RoundRobinRouter(nrOfWorkers)), name = "workerRouter"
   )
   var time = System.currentTimeMillis()
   val log = Logging(context.system, this)
-
   def processRequests(urls: List[String], parentDir: String) = {
     for(url <- urls) {
       listener ! UrlToDownload(url, parentDir)
       workerRouter ! UrlToDownload(url, parentDir)
     }
   }
-
-  // communication
   def receive = {
     case DownloadURLS(urls, parentDir) => processRequests(urls, parentDir)
     case _ => log.error("Unknown message should not be here")
@@ -32,13 +27,12 @@ class Master (nrOfWorkers: Int, listener: ActorRef, timeout: Int = 5000, timeTra
 }
 
 // actor for communicating with outside world and stopping the whole system
-class Listener(var total: Int = 0) extends Actor {
+class Listener extends Actor {
   val log = Logging(context.system, this)
-  var accum = 0
   var answers = scala.collection.mutable.Map[String,Boolean]()
-
   def receive = {
-    case UrlToDownload(url, parentDir) => answers.+=((url,false))
+    case UrlToDownload(url, parentDir) =>
+      answers.+=(url -> false)
     case ResultMessage(result, url, parentDir) =>
       val fileCreator = new FileCreator(DownloadRequest(url, parentDir))
       result match {
@@ -49,7 +43,6 @@ class Listener(var total: Int = 0) extends Actor {
           }
         case "TIMEOUT" =>
           log.info(url + " takes long time")
-
         case "FAIL" =>
           log.info(url + " failed to download")
           answers(url) = true
@@ -69,11 +62,14 @@ class Listener(var total: Int = 0) extends Actor {
       if (answers.filter(!_._2).isEmpty){
         context.system.shutdown()
       }
-    case  Finish => context.system.shutdown()
+    // if something wrong comes, we probably shut everything down
+    case  _ =>
+      log.error("meaningless message, shutting down")
+      context.system.shutdown()
   }
 }
 
-// simple actor that only keeps track of time and forces return if the system was idle for too long
+// simple actor that only keeps track of time and reports if some actor took too long
 class TimeTracker(periodicity: Double, idlingPeriod: Int) extends Actor {
   def receive = {
     case InitTT(url) => sender ! CheckRunTime(idlingPeriod, url)

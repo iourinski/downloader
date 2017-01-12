@@ -1,11 +1,9 @@
-/*
-  * Created by dmitri on 03/01/2017.
-  */
 import java.io.File
 
 import akka.actor._
 import com.typesafe.config.ConfigFactory
-import test.Utilities.{DownloadURLS, Listener, Master}
+import test.Actors.{Listener, Master}
+import test.Utilities.DownloadURLS
 
 import scala.collection.mutable.ListBuffer
 import scala.io.Source
@@ -13,7 +11,6 @@ import scala.util.matching.Regex
 
 object Downloader extends App {
   override def main(args: Array[String]): Unit = {
-
     // read simple config from resources/application.conf
     val config = ConfigFactory.load()
     val numWorkers = config.getInt("master.numWorkers")
@@ -31,14 +28,14 @@ object Downloader extends App {
     if (inputFilePath != "") {
       val system = ActorSystem("DownloadSystem")
       // create the result listener, which will print the result and shutdown the system
-      val listener = system.actorOf(Props(new Listener(0)))
+      val listener = system.actorOf(Props(new Listener))
+      // create main actor that will distribute requests to a poll of workers
       val master = system.actorOf(Props(new Master(numWorkers, listener)), name = "master")
+      // read urls from  a files, send them to master for processing
       val file  = new File(inputFilePath)
-
       if (file.exists()){
         val comment = new Regex("^#|^\\s*$")
         val urls = ListBuffer[String]()
-
         for (line <- Source.fromFile(file).getLines()){
           val commentCheck = comment.findFirstIn(line) match {
             case Some(s) => true

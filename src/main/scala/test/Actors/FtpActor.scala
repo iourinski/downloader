@@ -1,18 +1,15 @@
 package test.Actors
 
-/**
-  * Created by dmitri on 03/01/2017.
-  */
-
-import java.io.{BufferedOutputStream, FileOutputStream, IOException}
+import java.io.{BufferedOutputStream, FileNotFoundException, FileOutputStream, IOException}
+import scala.util.matching.Regex
+import org.apache.commons.net.ftp.{FTP, FTPClient}
 
 import akka.actor._
-import org.apache.commons.net.ftp.{FTP, FTPClient}
 
 import test.Utilities._
 
-import scala.util.matching.Regex
-
+// simple actor that downloads files over ftp
+// there are only three possible exceptions-- in this case we just send message that the download failed
 class FtpActor extends Actor {
   def receive = {
     case DownloadRequest(url, parentDir) =>
@@ -22,30 +19,28 @@ class FtpActor extends Actor {
     case _ =>
       sender() ! ResultMessage("UNKNOWN", "", "")
   }
-  def downloadUrl(url: String, parentDir: String): String = {
+
+  private def downloadUrl(url: String, parentDir: String): String = {
     val (server, filepath, login, passw) = getServerAddress(url)
     val ftpClient = new FTPClient()
     val fileCreator = new FileCreator(DownloadRequest(url, parentDir))
-
     try {
-
       ftpClient.connect(server)
       ftpClient.login(login,passw)
-      ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
-
-      // APPROACH #1: using retrieveFile(String, OutputStream)
-
+      ftpClient.setFileType(FTP.BINARY_FILE_TYPE)
       val downloadFile = fileCreator.makeFile()
       val outputStream = new BufferedOutputStream(new FileOutputStream(downloadFile))
       val inputStream = ftpClient.retrieveFileStream(filepath)
       var bytesArray  = new Array[Byte](4096)
       var bytesRead = 0
-      //println(inputStream.read(bytesArray))
       while (bytesRead  != -1) {
         outputStream.write(bytesArray, 0, bytesRead)
-        bytesRead = inputStream.read(bytesArray)
+        try {
+          bytesRead = inputStream.read(bytesArray)
+        } catch {
+          case ex: NullPointerException => return "FAIL"
+        }
       }
-
       val success = ftpClient.completePendingCommand()
       outputStream.close()
       inputStream.close()
@@ -54,9 +49,9 @@ class FtpActor extends Actor {
       } else {
         return "FAIL"
       }
-
     } catch {
       case ex: IOException => return "FAIL"
+      case ex: FileNotFoundException => return "FAIL"
     } finally {
       try {
         if (ftpClient.isConnected()) {
@@ -68,6 +63,7 @@ class FtpActor extends Actor {
       }
     }
   }
+
   // lets try to get login, password, server and filepath from address
   private def getServerAddress(url: String):(String, String, String, String) = {
     val pattern = new Regex("^ftp:\\/\\/[^\\/]+")

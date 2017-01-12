@@ -9,7 +9,9 @@ libraryDependencies ++= Seq(
   "org.json4s" % "json4s-jackson_2.10" % "3.3.0",
   "org.apache.httpcomponents" % "httpclient" % "4.5",
   "com.typesafe.akka" %% "akka-actor" % "2.3.14",
-   "commons-net" % "commons-net" % "3.5"
+  "com.typesafe.akka" %% "akka-testkit" % "2.3.14",
+  "org.scalatest" % "scalatest_2.10" % "3.0.1",
+  "commons-net" % "commons-net" % "3.5"
 )
 
 resolvers ++= Seq(
